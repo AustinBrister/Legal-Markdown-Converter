@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Output folders
+Downloads/
+Converted*/
+
+# Temporary files
+*.tmp
+temp/
+tmp/
+
+# Recycling bin
+recycling bin/
+
+# Don't ignore the src folder itself, but we'll handle it as submodule
+# src/

@@ -1,0 +1,21 @@
+# Web Framework
+flask>=3.0.0
+werkzeug>=3.0.0
+
+# Markdown Processing
+markitdown
+markdown-it-py>=3.0.0
+
+# PDF Processing
+PyMuPDF>=1.23.0
+pytesseract>=0.3.10
+Pillow>=10.0.0
+
+# macOS Menubar App
+rumps>=0.4.0
+
+# Note: Pandoc must be installed separately via Homebrew
+# brew install pandoc
+
+# Note: Tesseract OCR must be installed separately via Homebrew
+# brew install tesseract
