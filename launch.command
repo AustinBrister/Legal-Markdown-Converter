@@ -8,15 +8,15 @@ if [ ! -d "venv" ]; then
   echo "Virtual environment not found. Creating one..."
   python3 -m venv venv
   source venv/bin/activate
-  pip install -r requirements.txt
+  venv/bin/pip install -r requirements.txt
 else
   source venv/bin/activate
 fi
 
 # Check for Flask and install if missing
-if ! python -c "import flask" &> /dev/null; then
+if ! venv/bin/python -c "import flask" &> /dev/null; then
   echo "Installing dependencies..."
-  pip install -r requirements.txt
+  venv/bin/pip install -r requirements.txt
 fi
 
 # Kill any process already on port 5050
@@ -25,14 +25,14 @@ PID=$(lsof -ti:5050)
 
 # Launch the app
 echo "Starting Legal Markdown Converter..."
-python gui_launcher.py &
+venv/bin/python gui_launcher.py &
 
 # Wait for Flask to start up
 while ! nc -z localhost 5050; do sleep 0.5; done
 sleep 1
 
 # Read browser from config, or use default
-BROWSER_PATH=$(python -c "import json; c=json.load(open('config.json')); print(c.get('browser',{}).get('path',''))" 2>/dev/null)
+BROWSER_PATH=$(venv/bin/python -c "import json; c=json.load(open('config.json')); print(c.get('browser',{}).get('path',''))" 2>/dev/null)
 
 if [ -n "$BROWSER_PATH" ] && [ -e "$BROWSER_PATH" ]; then
   # Use configured browser
