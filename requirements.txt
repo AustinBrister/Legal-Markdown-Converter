@@ -13,7 +13,10 @@ PyMuPDF>=1.23.0
 pytesseract>=0.3.10
 Pillow>=10.0.0
 
-# macOS Menubar App
+# Email Processing (EML/MSG)
+extract-msg>=0.48.0  # For Outlook .msg files
+
+# macOS Menubar App (optional, macOS only)
 rumps>=0.4.0
 
 # Note: Pandoc must be installed separately via Homebrew

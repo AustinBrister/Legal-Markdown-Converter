@@ -17,7 +17,15 @@ Large Language Models work best with clean markdown text. But legal documents co
 - **Westlaw Link Stripping**: Removes the excessive citation hyperlinks that Westlaw embeds in documents (these waste context window tokens and confuse LLMs)
 - **RTF Detection**: Identifies RTF files masquerading as .doc files (a common Westlaw quirk)
 
+### Email Support (EML/MSG)
+- Converts Outlook .msg and standard .eml email files
+- Automatically extracts and converts all attachments
+- Combines email body and attachments into a single markdown file
+- Adds clear separator headers (e.g., "# Begin Email Attachment 1") so LLMs know where attachments start
+- Handles nested attachments of any supported format
+
 ### Multi-Format Support
+- Email files (.eml, .msg) with attachments
 - PDF (with automatic OCR when needed)
 - Word (.docx)
 - RTF

@@ -16,6 +16,7 @@ import uuid
 import threading
 import time
 from werkzeug.utils import secure_filename
+from email_converter import process_email_file
 
 app = Flask(__name__)
 UPLOAD_FOLDER = tempfile.gettempdir()
@@ -109,16 +110,111 @@ def process_single_file(filename, file_data, session_id):
     """Process a single file and update status."""
     ext = os.path.splitext(filename)[1].lower()
     input_path = os.path.join(UPLOAD_FOLDER, secure_filename(filename))
-    
+
     # Save the file
     with open(input_path, 'wb') as f:
         f.write(file_data)
-    
+
     output_filename = os.path.splitext(filename)[0] + ".md"
     output_path = os.path.join(OUTPUT_FOLDER, output_filename)
     file_id = str(uuid.uuid4())
-    
+
     try:
+        # Handle email files (EML/MSG) - convert to PDF first, then process
+        if ext in [".eml", ".msg"]:
+            processing_status[session_id]['current_status'] = f'{filename} is an email file, extracting content and attachments...'
+
+            try:
+                # Convert email to PDF (includes body + attachment cover sheets)
+                pdf_bytes, separate_attachments = process_email_file(file_data, filename)
+
+                # Process the combined PDF through our normal pipeline
+                combined_content_parts = []
+
+                # First, convert the main email PDF to markdown
+                with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp_pdf:
+                    tmp_pdf.write(pdf_bytes)
+                    tmp_pdf_path = tmp_pdf.name
+
+                try:
+                    if needs_ocr(tmp_pdf_path):
+                        processing_status[session_id]['current_status'] = f'{filename} email body requires OCR...'
+                        email_content = ocr_pdf(tmp_pdf_path)
+                    else:
+                        with open(tmp_pdf_path, "rb") as stream:
+                            result = MarkItDown().convert_stream(stream)
+                            email_content = strip_westlaw_links(result.markdown)
+                finally:
+                    os.unlink(tmp_pdf_path)
+
+                combined_content_parts.append(email_content)
+
+                # Process any attachments that couldn't be embedded in the PDF
+                for i, attachment in enumerate(separate_attachments, 1):
+                    att_filename = attachment['filename']
+                    att_data = attachment['data']
+                    att_ext = os.path.splitext(att_filename)[1].lower()
+
+                    processing_status[session_id]['current_status'] = f'{filename}: Processing attachment {i} ({att_filename})...'
+
+                    # Save attachment to temp file
+                    with tempfile.NamedTemporaryFile(suffix=att_ext, delete=False) as tmp_att:
+                        tmp_att.write(att_data)
+                        tmp_att_path = tmp_att.name
+
+                    try:
+                        # Convert attachment based on type
+                        if att_ext == ".pdf":
+                            if needs_ocr(tmp_att_path):
+                                att_content = ocr_pdf(tmp_att_path)
+                            else:
+                                with open(tmp_att_path, "rb") as stream:
+                                    result = MarkItDown().convert_stream(stream)
+                                    att_content = strip_westlaw_links(result.markdown)
+                        elif att_ext in PANDOC_FORMATS:
+                            try:
+                                pandoc_output = subprocess.run(
+                                    ["pandoc", tmp_att_path, "-f", att_ext[1:], "-t", "markdown"],
+                                    capture_output=True, check=True, text=True
+                                )
+                                att_content = strip_westlaw_links(pandoc_output.stdout)
+                            except:
+                                with open(tmp_att_path, "rb") as stream:
+                                    result = MarkItDown().convert_stream(stream)
+                                    att_content = strip_westlaw_links(result.markdown)
+                        else:
+                            # Use MarkItDown for other formats
+                            with open(tmp_att_path, "rb") as stream:
+                                result = MarkItDown().convert_stream(stream)
+                                att_content = strip_westlaw_links(result.markdown)
+
+                        # Add attachment content with header
+                        combined_content_parts.append(f"\n\n---\n\n# Begin Email Attachment {i}\n**Filename:** {att_filename}\n\n{att_content}")
+                    except Exception as att_err:
+                        combined_content_parts.append(f"\n\n---\n\n# Begin Email Attachment {i}\n**Filename:** {att_filename}\n\n[Error converting attachment: {str(att_err)}]")
+                    finally:
+                        os.unlink(tmp_att_path)
+
+                # Combine all content
+                content = "\n".join(combined_content_parts)
+
+                # Save to local folder
+                with open(output_path, "w", encoding="utf-8") as f_out:
+                    f_out.write(content)
+
+                # Store in memory for remote downloads
+                converted_files[file_id] = {
+                    'filename': output_filename,
+                    'content': content
+                }
+
+                att_count = len(separate_attachments)
+                att_msg = f" with {att_count} attachment(s)" if att_count > 0 else ""
+                return {'type': 'success', 'message': f'{filename} converted successfully{att_msg}', 'file_id': file_id, 'filename': output_filename}
+
+            except Exception as email_err:
+                return {'type': 'error', 'message': f'{filename} email processing failed: {str(email_err)}'}
+
         # Handle PDFs specially
         if ext == ".pdf":
             if needs_ocr(input_path):
@@ -760,7 +856,7 @@ def index():
           <div class="upload-area" onclick="document.getElementById('file-upload').click()">
             <div class="upload-icon">📁</div>
             <div class="upload-text">Drop files here or click to browse</div>
-            <div class="upload-subtext">Supports Word, RTF, HTML, PDFs (including scanned), and more</div>
+            <div class="upload-subtext">Supports Word, RTF, HTML, PDFs (including scanned), Emails (EML/MSG with attachments), and more</div>
           </div>
           
           <input id="file-upload" type="file" name="files" multiple onchange="showFileNames(this)">
