@@ -2,7 +2,7 @@
 # Austin's Markdown Converter - Brave Web App Launcher
 # Save as: launch-markdown-brave.command
 
-cd "$HOME/DevHubs/AWB-MarkItDown" || exit 1
+cd "$HOME/DevHubs/Legal-Markdown-Converter" || exit 1
 
 # Check if virtual environment exists
 if [ ! -d "venv" ]; then
@@ -44,7 +44,7 @@ echo "🌐 Launching in Brave Browser..."
   --enable-features=OverlayScrollbar \
   --disable-brave-rewards-extension \
   --disable-brave-wallet-extension \
-  --user-data-dir="$HOME/Library/Application Support/AWB-MarkdownConverter" \
+  --user-data-dir="$HOME/Library/Application Support/Legal-Markdown-Converter" \
   2>/dev/null &
 
 # Show success notification

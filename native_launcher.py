@@ -10,7 +10,7 @@ import webview
 APP_TITLE = "Austin Brister's Wonderful Markdown Converter"
 APP_URL = "http://127.0.0.1:5050"
 APP_PORT = 5050
-PROJECT_DIR = os.path.expanduser("~/DevHubs/AWB-MarkItDown")
+PROJECT_DIR = os.path.expanduser("~/DevHubs/Legal-Markdown-Converter")
 
 def is_port_open(port):
     """Check if a port is open"""

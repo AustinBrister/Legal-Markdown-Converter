@@ -1,4 +1,4 @@
-# AWB MarkItDown - Attorney Document Converter
+# Legal Markdown Converter
 
 A custom macOS application wrapper around Microsoft's [MarkItDown](https://github.com/microsoft/markitdown) library, specifically designed for legal document conversion workflows.
 
@@ -99,7 +99,7 @@ Converted files are automatically saved to:
 ## Project Structure
 
 ```
-AWB-MarkItDown/
+Legal-Markdown-Converter/
 ├── gui_launcher.py              # Main Flask web application
 ├── menubar_app.py               # macOS menubar app
 ├── launch_MarkItDown_gui.command # Launch script

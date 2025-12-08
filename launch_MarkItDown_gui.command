@@ -1,5 +1,5 @@
 #!/bin/bash
-cd "$HOME/DevHubs/AWB-MarkItDown" || exit 1
+cd "$HOME/DevHubs/Legal-Markdown-Converter" || exit 1
 
 # Check if virtual environment exists
 if [ ! -d "venv" ]; then

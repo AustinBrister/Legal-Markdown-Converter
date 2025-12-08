@@ -9,7 +9,7 @@ import threading
 class MarkdownConverterApp(rumps.App):
     def __init__(self):
         super(MarkdownConverterApp, self).__init__("⚖️", quit_button="Quit Converter")
-        self.project_dir = os.path.expanduser("~/DevHubs/AWB-MarkItDown")
+        self.project_dir = os.path.expanduser("~/DevHubs/Legal-Markdown-Converter")
         self.port = 5050
         self.server_process = None
         self.menu = [
