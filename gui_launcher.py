@@ -22,7 +22,30 @@ from email_converter import process_email_file
 
 app = Flask(__name__)
 UPLOAD_FOLDER = tempfile.gettempdir()
-OUTPUT_FOLDER = os.path.expanduser("~/Downloads/Converted to MD")
+
+# Load config for output folder
+def get_output_folder():
+    """Get output folder from config or use default."""
+    try:
+        with open('config.json', 'r') as f:
+            config = json.load(f)
+            path = config.get('local_save', {}).get('path', '~/Downloads/Converted to MD')
+            return os.path.expanduser(path)
+    except:
+        return os.path.expanduser("~/Downloads/Converted to MD")
+
+OUTPUT_FOLDER = get_output_folder()
+DEBUG_FOLDER = os.path.join(OUTPUT_FOLDER, "debug")
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+def is_debug_enabled():
+    """Check if debug mode is enabled in config."""
+    try:
+        with open('config.json', 'r') as f:
+            config = json.load(f)
+            return config.get('debug', {}).get('save_intermediate_pdf', False)
+    except:
+        return False
 
 def get_local_ip():
     """Get the local network IP address."""
@@ -34,7 +57,6 @@ def get_local_ip():
         return ip
     except:
         return "127.0.0.1"
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # Store converted files in memory for remote downloads
 converted_files = {}
@@ -309,6 +331,14 @@ def process_single_file(filename, file_data, session_id):
                 # Convert email to PDF (includes body + attachment cover sheets)
                 pdf_bytes, separate_attachments = process_email_file(file_data, filename)
 
+                # Save debug copy of the intermediate PDF (if enabled in config)
+                if is_debug_enabled():
+                    os.makedirs(DEBUG_FOLDER, exist_ok=True)
+                    debug_pdf_path = os.path.join(DEBUG_FOLDER, os.path.splitext(filename)[0] + "_email_debug.pdf")
+                    with open(debug_pdf_path, 'wb') as debug_file:
+                        debug_file.write(pdf_bytes)
+                    processing_status[session_id]['current_status'] = f'{filename} debug PDF saved to {debug_pdf_path}'
+
                 # Process the combined PDF through our normal pipeline
                 combined_content_parts = []
 
@@ -529,14 +559,22 @@ def process_files():
     
     return jsonify({'session_id': session_id})
 
+def is_local_request():
+    """Check if the request is from localhost."""
+    remote_addr = request.remote_addr
+    return remote_addr in ['127.0.0.1', '::1', 'localhost']
+
 @app.route("/status/<session_id>", methods=["GET"])
 def get_status(session_id):
     """Get the current processing status."""
     if session_id not in processing_status:
         return jsonify({'error': 'Invalid session ID'}), 404
-    
-    status = processing_status[session_id]
-    
+
+    status = processing_status[session_id].copy()
+
+    # Add flag indicating if this is a local request (files saved locally)
+    status['is_local'] = is_local_request()
+
     # Clean up completed sessions after returning status
     if status['complete']:
         # Return status one last time before cleanup
@@ -548,7 +586,7 @@ def get_status(session_id):
                 del processing_status[session_id]
         threading.Thread(target=cleanup).start()
         return response
-    
+
     return jsonify(status)
 
 @app.route("/download/<file_id>", methods=["GET"])
@@ -1270,6 +1308,7 @@ def index():
         
         let statusInterval = null;
         let lastResultCount = 0;
+        let isLocalRequest = false; // Track if user is on localhost
         
         function showFileNames(input) {
           const list = document.getElementById("selected-files");
@@ -1297,27 +1336,33 @@ def index():
         function addResult(result) {
           const resultItem = document.createElement('div');
           resultItem.className = `result-item result-${result.type}`;
-          
+
           let content = `
             <span class='result-icon'>${icons[result.type] || '•'}</span>
             <span>${result.message}</span>
           `;
-          
-          // Add download button for successful conversions
+
+          // For successful conversions, show different UI based on local vs remote
           if (result.type === 'success' && result.file_id) {
-            content += `<a href="#" class="download-link" onclick="downloadFile('${result.file_id}', '${result.filename}'); return false;">Download</a>`;
+            if (isLocalRequest) {
+              // Local user - file is saved to folder, show indicator
+              content += `<span class="download-link" style="cursor: default; opacity: 0.7;">Saved to folder</span>`;
+            } else {
+              // Remote user - show download button
+              content += `<a href="#" class="download-link" onclick="downloadFile('${result.file_id}', '${result.filename}'); return false;">Download</a>`;
+            }
           }
-          
+
           resultItem.innerHTML = content;
           resultsList.appendChild(resultItem);
-          
-          // Auto-download successful conversions
-          if (result.type === 'success' && result.file_id) {
+
+          // Auto-download only for remote users
+          if (result.type === 'success' && result.file_id && !isLocalRequest) {
             setTimeout(() => {
               downloadFile(result.file_id, result.filename);
             }, 500); // Small delay to ensure UI updates first
           }
-          
+
           // Auto-scroll to latest result
           resultsList.scrollTop = resultsList.scrollHeight;
         }
@@ -1326,16 +1371,19 @@ def index():
           try {
             const response = await fetch(`/status/${sessionId}`);
             const data = await response.json();
-            
+
             if (data.error) {
               throw new Error(data.error);
             }
-            
+
+            // Track if this is a local request (files saved to folder)
+            isLocalRequest = data.is_local || false;
+
             // Update progress
             const percent = (data.current / data.total) * 100;
             progressFill.style.width = percent + '%';
             progressText.textContent = data.current_status || 'Processing...';
-            
+
             // Add new results
             if (data.results.length > lastResultCount) {
               for (let i = lastResultCount; i < data.results.length; i++) {
@@ -1343,7 +1391,7 @@ def index():
               }
               lastResultCount = data.results.length;
             }
-            
+
             // Check if complete
             if (data.complete) {
               clearInterval(statusInterval);

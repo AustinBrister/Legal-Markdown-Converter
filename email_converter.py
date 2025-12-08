@@ -218,35 +218,76 @@ def create_email_body_pdf(email_data):
     page.draw_line(fitz.Point(50, y_pos), fitz.Point(562, y_pos), color=(0.7, 0.7, 0.7))
 
     # Body text - handle long bodies across multiple pages
+    # Split body into lines and insert line by line to handle pagination properly
     y_pos = 200
-    remaining_body = body
+    line_height = 12
+    fontsize = 10
+    margin_left = 50
+    margin_right = 562
+    margin_bottom = 742
 
-    while remaining_body:
-        body_rect = fitz.Rect(50, y_pos, 562, 742)
+    # Split body into lines, preserving empty lines
+    lines = body.split('\n')
 
-        # Insert text and get overflow
-        rc = page.insert_textbox(
-            body_rect,
-            remaining_body,
-            fontsize=10,
-            fontname="helv"
-        )
+    for line in lines:
+        # Check if we need a new page
+        if y_pos + line_height > margin_bottom:
+            page = doc.new_page(width=612, height=792)
+            y_pos = 50
 
-        if rc < 0:
-            # Text overflowed, need new page
-            # Estimate how much text fit (rough approximation)
-            chars_per_line = 90
-            lines_per_page = int((742 - y_pos) / 12)
-            chars_fit = chars_per_line * lines_per_page
-            remaining_body = remaining_body[chars_fit:]
+        # Handle long lines by wrapping
+        # Approximate characters that fit per line
+        max_chars_per_line = 85
 
-            if remaining_body.strip():
-                page = doc.new_page(width=612, height=792)
-                y_pos = 50
-            else:
-                break
+        if len(line) <= max_chars_per_line:
+            # Line fits, insert it
+            page.insert_text(
+                fitz.Point(margin_left, y_pos + fontsize),
+                line,
+                fontsize=fontsize,
+                fontname="helv"
+            )
+            y_pos += line_height
         else:
-            break
+            # Line needs wrapping
+            words = line.split(' ')
+            current_line = ''
+
+            for word in words:
+                test_line = current_line + (' ' if current_line else '') + word
+
+                if len(test_line) <= max_chars_per_line:
+                    current_line = test_line
+                else:
+                    # Output current line
+                    if current_line:
+                        if y_pos + line_height > margin_bottom:
+                            page = doc.new_page(width=612, height=792)
+                            y_pos = 50
+
+                        page.insert_text(
+                            fitz.Point(margin_left, y_pos + fontsize),
+                            current_line,
+                            fontsize=fontsize,
+                            fontname="helv"
+                        )
+                        y_pos += line_height
+
+                    current_line = word
+
+            # Output remaining text
+            if current_line:
+                if y_pos + line_height > margin_bottom:
+                    page = doc.new_page(width=612, height=792)
+                    y_pos = 50
+
+                page.insert_text(
+                    fitz.Point(margin_left, y_pos + fontsize),
+                    current_line,
+                    fontsize=fontsize,
+                    fontname="helv"
+                )
+                y_pos += line_height
 
     return doc
 

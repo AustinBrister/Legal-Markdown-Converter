@@ -7,5 +7,12 @@
   "server": {
     "port": 5050,
     "host": "127.0.0.1"
+  },
+  "local_save": {
+    "enabled": true,
+    "path": "~/Downloads/Converted to MD"
+  },
+  "debug": {
+    "save_intermediate_pdf": false
   }
 }
