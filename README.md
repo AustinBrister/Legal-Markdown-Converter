@@ -28,8 +28,8 @@ A custom macOS application wrapper around Microsoft's [MarkItDown](https://githu
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/AWB-MarkItDown.git
-   cd AWB-MarkItDown
+   git clone https://github.com/AustinBrister/Legal-Markdown-Converter.git
+   cd Legal-Markdown-Converter
    ```
 
 2. **Install system dependencies:**
