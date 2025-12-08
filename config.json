@@ -1,0 +1,11 @@
+{
+  "browser": {
+    "enabled": true,
+    "path": "",
+    "use_app_mode": true
+  },
+  "server": {
+    "port": 5050,
+    "host": "127.0.0.1"
+  }
+}

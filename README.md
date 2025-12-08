@@ -1,126 +1,136 @@
 # Legal Markdown Converter
 
-A custom macOS application wrapper around Microsoft's [MarkItDown](https://github.com/microsoft/markitdown) library, specifically designed for legal document conversion workflows.
+A document-to-markdown conversion tool built for legal professionals preparing documents for AI and LLM workflows.
+
+## Why This Exists
+
+Large Language Models work best with clean markdown text. But legal documents come in messy formats - scanned PDFs, Westlaw downloads with embedded links everywhere, RTF files disguised as .doc files, and more. This tool handles all of that automatically.
 
 ## Features
 
-- **Beautiful Web Interface**: Dark-themed Flask web app for drag-and-drop document conversion
-- **macOS Menubar Integration**: Persistent menubar app for quick access
-- **Smart PDF Handling**: 
-  - Automatic detection of scanned PDFs requiring OCR
-  - Fallback OCR processing with Tesseract
-  - Text extraction optimization
-- **Westlaw Link Stripping**: Automatically removes citation links from converted documents
-- **RTF Detection**: Identifies RTF files masquerading as .doc files (common with Westlaw downloads)
-- **Multi-Format Support**: 
-  - PDF (with OCR)
-  - Word (.docx)
-  - RTF
-  - HTML
-  - And more via Pandoc
+### Smart OCR
+- Automatically detects when a PDF is scanned (image-based) vs. text-based
+- Only runs OCR when actually needed, saving time on text-based PDFs
+- Uses Tesseract for reliable text extraction from scanned documents
 
-## Prerequisites
+### Legal-Specific Handling
+- **Westlaw Link Stripping**: Removes the excessive citation hyperlinks that Westlaw embeds in documents (these waste context window tokens and confuse LLMs)
+- **RTF Detection**: Identifies RTF files masquerading as .doc files (a common Westlaw quirk)
 
-- Python 3.10 or higher
-- Homebrew (for system dependencies)
+### Multi-Format Support
+- PDF (with automatic OCR when needed)
+- Word (.docx)
+- RTF
+- HTML
+- PowerPoint, Excel, and more via Pandoc
+
+### Clean Interface
+- Drag-and-drop web interface
+- Works on macOS and Windows
+- Configure your preferred browser in `config.json`
 
 ## Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/AustinBrister/Legal-Markdown-Converter.git
-   cd Legal-Markdown-Converter
-   ```
+### Prerequisites
+- Python 3.10 or higher
+- Pandoc and Tesseract (for OCR)
 
-2. **Install system dependencies:**
-   ```bash
-   brew install pandoc tesseract
-   ```
+### macOS
+```bash
+# Install system dependencies
+brew install pandoc tesseract
 
-3. **Create and activate virtual environment:**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
+# Clone and setup
+git clone https://github.com/AustinBrister/Legal-Markdown-Converter.git
+cd Legal-Markdown-Converter
+git submodule init
+git submodule update
+```
 
-4. **Install Python dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Windows
+```powershell
+# Install Pandoc: https://pandoc.org/installing.html
+# Install Tesseract: https://github.com/UB-Mannheim/tesseract/wiki
 
-5. **Initialize the MarkItDown submodule:**
-   ```bash
-   git submodule init
-   git submodule update
-   ```
+# Clone and setup
+git clone https://github.com/AustinBrister/Legal-Markdown-Converter.git
+cd Legal-Markdown-Converter
+git submodule init
+git submodule update
+```
 
 ## Usage
 
-### Option 1: Launch Script (Recommended)
-
-Double-click `launch_MarkItDown_gui.command` or run:
+### macOS
+Double-click `launch.command` or run:
 ```bash
-./launch_MarkItDown_gui.command
+./launch.command
 ```
 
-This will:
-- Activate the virtual environment
-- Start the Flask server
-- Open the web interface in your default browser
-
-### Option 2: Menubar App
-
-Run the menubar app for persistent access:
-```bash
-python menubar_app.py
+### Windows
+Double-click `launch.bat` or run:
+```cmd
+launch.bat
 ```
 
-This creates a ⚖️ icon in your menubar with options to:
-- Open the converter
-- Restart the server
-- Check server status
+The launch scripts will:
+- Create a virtual environment if needed
+- Install dependencies automatically
+- Start the server
+- Open your browser to the converter
 
-### Option 3: Manual Launch
-
+### Manual Launch
 ```bash
-source venv/bin/activate
+# Activate virtual environment
+source venv/bin/activate  # macOS/Linux
+venv\Scripts\activate     # Windows
+
+# Run the server
 python gui_launcher.py
 ```
+Then open http://127.0.0.1:5050
 
-Then navigate to `http://127.0.0.1:5050`
+## Configuration
+
+Edit `config.json` to customize:
+
+```json
+{
+  "browser": {
+    "enabled": true,
+    "path": "",
+    "use_app_mode": true
+  },
+  "server": {
+    "port": 5050,
+    "host": "127.0.0.1"
+  }
+}
+```
+
+- **browser.path**: Set a specific browser path (leave empty for system default)
+- **server.port**: Change the port if 5050 is in use
 
 ## Output
 
-Converted files are automatically saved to:
+Converted files are saved to:
 ```
 ~/Downloads/Converted to MD/
 ```
 
-## Project Structure
+## Roadmap
 
-```
-Legal-Markdown-Converter/
-├── gui_launcher.py              # Main Flask web application
-├── menubar_app.py               # macOS menubar app
-├── launch_MarkItDown_gui.command # Launch script
-├── requirements.txt             # Python dependencies
-├── src/                         # Microsoft MarkItDown (git submodule)
-└── venv/                        # Virtual environment (not in git)
-```
-
-## Development Notes
-
-- The `src/` directory is a git submodule pointing to Microsoft's MarkItDown repository
-- All converted documents include automatic Westlaw link removal
-- OCR is triggered automatically when PDFs have insufficient text content
-- The web interface includes real-time progress updates and automatic downloads
+Future features planned:
+- Additional legal-specific file format handling
+- More context-optimized conversion settings for different LLM use cases
+- Batch processing improvements
 
 ## Credits
 
 Built by Austin W. Brister, Partner at McGinnis Lochridge LLP
 
-Based on Microsoft's [MarkItDown](https://github.com/microsoft/markitdown) library.
+Uses Microsoft's [MarkItDown](https://github.com/microsoft/markitdown) library for core conversion functionality.
 
 ## License
 
-This wrapper is MIT licensed. See Microsoft's MarkItDown repository for its license terms.
+MIT License. See Microsoft's MarkItDown repository for its license terms.
