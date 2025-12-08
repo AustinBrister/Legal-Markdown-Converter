@@ -24,8 +24,15 @@ Large Language Models work best with clean markdown text. But legal documents co
 - Adds clear separator headers (e.g., "# Begin Email Attachment 1") so LLMs know where attachments start
 - Handles nested attachments of any supported format
 
+### ZIP Archive Support
+- Extracts and converts all files within ZIP archives
+- Handles nested ZIPs (ZIPs within ZIPs)
+- Adds clear headers for each file (e.g., "### File 1: contract.pdf")
+- Works with ZIP attachments in emails too
+
 ### Multi-Format Support
 - Email files (.eml, .msg) with attachments
+- ZIP archives (with recursive extraction)
 - PDF (with automatic OCR when needed)
 - Word (.docx)
 - RTF

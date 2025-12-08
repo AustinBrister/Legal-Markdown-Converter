@@ -4,6 +4,7 @@ import os
 import tempfile
 import re
 import subprocess
+import zipfile
 from markitdown import MarkItDown
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
@@ -94,17 +95,160 @@ def ocr_pdf(pdf_path):
 def strip_westlaw_links(text):
     # Fix broken lines inside [label] text first
     text = re.sub(r'\[([^\]].*?)\n([^\]].*?)\]\(', lambda m: f"[{m.group(1)} {m.group(2)}](", text)
-    
+
     # Remove markdown links starting with http
     # Pattern handles nested parentheses
     pattern = r'\[([^\]]+(?:\[[^\]]*\][^\]]*)*)\]\(http(?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)'
-    
+
     text = re.sub(pattern, r'\1', text, flags=re.DOTALL)
-    
+
     # Only clean up multiple spaces (2 or more), preserving all line breaks
     text = re.sub(r'  +', ' ', text)
-    
+
     return text.strip()
+
+
+def convert_file_to_markdown(file_path_or_data, filename, is_data=False):
+    """
+    Convert a single file to markdown content.
+
+    Args:
+        file_path_or_data: Either a file path (str) or file bytes
+        filename: The original filename (used for extension detection)
+        is_data: If True, file_path_or_data is bytes; if False, it's a path
+
+    Returns:
+        str: The converted markdown content
+    """
+    ext = os.path.splitext(filename)[1].lower()
+
+    # If we have bytes, write to temp file
+    if is_data:
+        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+            tmp.write(file_path_or_data)
+            file_path = tmp.name
+        cleanup_needed = True
+    else:
+        file_path = file_path_or_data
+        cleanup_needed = False
+
+    try:
+        # Handle PDFs
+        if ext == ".pdf":
+            if needs_ocr(file_path):
+                return ocr_pdf(file_path)
+            else:
+                with open(file_path, "rb") as stream:
+                    result = MarkItDown().convert_stream(stream)
+                    content = strip_westlaw_links(result.markdown)
+                    if len(content.strip()) < 50:
+                        # Fall back to OCR if text extraction yielded little content
+                        return ocr_pdf(file_path)
+                    return content
+
+        # Handle RTF (check actual content, not just extension)
+        if is_rtf_file(file_path):
+            try:
+                pandoc_output = subprocess.run(
+                    ["pandoc", file_path, "-f", "rtf", "-t", "markdown"],
+                    capture_output=True, check=True, text=True
+                )
+                return strip_westlaw_links(pandoc_output.stdout)
+            except:
+                pass  # Fall through to MarkItDown
+
+        # Handle Pandoc formats
+        if ext in PANDOC_FORMATS:
+            try:
+                pandoc_output = subprocess.run(
+                    ["pandoc", file_path, "-f", ext[1:], "-t", "markdown"],
+                    capture_output=True, check=True, text=True
+                )
+                return strip_westlaw_links(pandoc_output.stdout)
+            except:
+                pass  # Fall through to MarkItDown
+
+        # Default: use MarkItDown
+        with open(file_path, "rb") as stream:
+            result = MarkItDown().convert_stream(stream)
+            return strip_westlaw_links(result.markdown)
+
+    finally:
+        if cleanup_needed and os.path.exists(file_path):
+            os.unlink(file_path)
+
+
+def process_zip_file(zip_data, zip_filename, status_callback=None):
+    """
+    Extract and convert all files from a ZIP archive.
+
+    Args:
+        zip_data: The ZIP file as bytes
+        zip_filename: Original ZIP filename
+        status_callback: Optional function to call with status updates
+
+    Returns:
+        str: Combined markdown content with headers for each file
+    """
+    content_parts = []
+    content_parts.append(f"## Begin ZIP Contents\n**Archive:** {zip_filename}\n")
+
+    with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as tmp_zip:
+        tmp_zip.write(zip_data)
+        tmp_zip_path = tmp_zip.name
+
+    try:
+        with zipfile.ZipFile(tmp_zip_path, 'r') as zf:
+            # Get list of files (skip directories and hidden files)
+            file_list = [f for f in zf.namelist()
+                        if not f.endswith('/')
+                        and not os.path.basename(f).startswith('.')
+                        and not f.startswith('__MACOSX')]
+
+            for i, inner_filename in enumerate(file_list, 1):
+                if status_callback:
+                    status_callback(f"Processing ZIP file {i}/{len(file_list)}: {inner_filename}")
+
+                inner_ext = os.path.splitext(inner_filename)[1].lower()
+                display_name = os.path.basename(inner_filename)
+
+                try:
+                    inner_data = zf.read(inner_filename)
+
+                    # Handle nested ZIPs recursively
+                    if inner_ext == '.zip':
+                        nested_content = process_zip_file(inner_data, display_name, status_callback)
+                        content_parts.append(f"\n### ZIP File {i}: {display_name}\n\n{nested_content}")
+
+                    # Handle nested emails
+                    elif inner_ext in ['.eml', '.msg']:
+                        try:
+                            pdf_bytes, attachments = process_email_file(inner_data, display_name)
+                            # For simplicity, just note it's an email - full processing would be recursive
+                            with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp_pdf:
+                                tmp_pdf.write(pdf_bytes)
+                                tmp_pdf_path = tmp_pdf.name
+                            try:
+                                email_content = convert_file_to_markdown(tmp_pdf_path, "email.pdf")
+                            finally:
+                                os.unlink(tmp_pdf_path)
+                            content_parts.append(f"\n### File {i}: {display_name}\n\n{email_content}")
+                        except Exception as e:
+                            content_parts.append(f"\n### File {i}: {display_name}\n\n[Error processing email: {str(e)}]")
+
+                    # Handle all other files
+                    else:
+                        file_content = convert_file_to_markdown(inner_data, display_name, is_data=True)
+                        content_parts.append(f"\n### File {i}: {display_name}\n\n{file_content}")
+
+                except Exception as e:
+                    content_parts.append(f"\n### File {i}: {display_name}\n\n[Error converting file: {str(e)}]")
+
+    finally:
+        os.unlink(tmp_zip_path)
+
+    content_parts.append("\n## End ZIP Contents")
+    return "\n".join(content_parts)
 
 def process_single_file(filename, file_data, session_id):
     """Process a single file and update status."""
@@ -120,6 +264,31 @@ def process_single_file(filename, file_data, session_id):
     file_id = str(uuid.uuid4())
 
     try:
+        # Handle ZIP files - extract and convert all contents
+        if ext == ".zip":
+            processing_status[session_id]['current_status'] = f'{filename} is a ZIP archive, extracting and converting contents...'
+
+            try:
+                def status_cb(msg):
+                    processing_status[session_id]['current_status'] = f'{filename}: {msg}'
+
+                content = process_zip_file(file_data, filename, status_cb)
+
+                # Save to local folder
+                with open(output_path, "w", encoding="utf-8") as f_out:
+                    f_out.write(content)
+
+                # Store in memory for remote downloads
+                converted_files[file_id] = {
+                    'filename': output_filename,
+                    'content': content
+                }
+
+                return {'type': 'success', 'message': f'{filename} ZIP archive converted successfully', 'file_id': file_id, 'filename': output_filename}
+
+            except Exception as zip_err:
+                return {'type': 'error', 'message': f'{filename} ZIP processing failed: {str(zip_err)}'}
+
         # Handle email files (EML/MSG) - convert to PDF first, then process
         if ext in [".eml", ".msg"]:
             processing_status[session_id]['current_status'] = f'{filename} is an email file, extracting content and attachments...'
@@ -157,43 +326,20 @@ def process_single_file(filename, file_data, session_id):
 
                     processing_status[session_id]['current_status'] = f'{filename}: Processing attachment {i} ({att_filename})...'
 
-                    # Save attachment to temp file
-                    with tempfile.NamedTemporaryFile(suffix=att_ext, delete=False) as tmp_att:
-                        tmp_att.write(att_data)
-                        tmp_att_path = tmp_att.name
-
                     try:
-                        # Convert attachment based on type
-                        if att_ext == ".pdf":
-                            if needs_ocr(tmp_att_path):
-                                att_content = ocr_pdf(tmp_att_path)
-                            else:
-                                with open(tmp_att_path, "rb") as stream:
-                                    result = MarkItDown().convert_stream(stream)
-                                    att_content = strip_westlaw_links(result.markdown)
-                        elif att_ext in PANDOC_FORMATS:
-                            try:
-                                pandoc_output = subprocess.run(
-                                    ["pandoc", tmp_att_path, "-f", att_ext[1:], "-t", "markdown"],
-                                    capture_output=True, check=True, text=True
-                                )
-                                att_content = strip_westlaw_links(pandoc_output.stdout)
-                            except:
-                                with open(tmp_att_path, "rb") as stream:
-                                    result = MarkItDown().convert_stream(stream)
-                                    att_content = strip_westlaw_links(result.markdown)
+                        # Handle ZIP attachments specially
+                        if att_ext == ".zip":
+                            def status_cb(msg):
+                                processing_status[session_id]['current_status'] = f'{filename}: {msg}'
+                            att_content = process_zip_file(att_data, att_filename, status_cb)
                         else:
-                            # Use MarkItDown for other formats
-                            with open(tmp_att_path, "rb") as stream:
-                                result = MarkItDown().convert_stream(stream)
-                                att_content = strip_westlaw_links(result.markdown)
+                            # Use the helper function for all other types
+                            att_content = convert_file_to_markdown(att_data, att_filename, is_data=True)
 
                         # Add attachment content with header
                         combined_content_parts.append(f"\n\n---\n\n# Begin Email Attachment {i}\n**Filename:** {att_filename}\n\n{att_content}")
                     except Exception as att_err:
                         combined_content_parts.append(f"\n\n---\n\n# Begin Email Attachment {i}\n**Filename:** {att_filename}\n\n[Error converting attachment: {str(att_err)}]")
-                    finally:
-                        os.unlink(tmp_att_path)
 
                 # Combine all content
                 content = "\n".join(combined_content_parts)
@@ -856,7 +1002,7 @@ def index():
           <div class="upload-area" onclick="document.getElementById('file-upload').click()">
             <div class="upload-icon">📁</div>
             <div class="upload-text">Drop files here or click to browse</div>
-            <div class="upload-subtext">Supports Word, RTF, HTML, PDFs (including scanned), Emails (EML/MSG with attachments), and more</div>
+            <div class="upload-subtext">Supports Word, RTF, HTML, PDFs (including scanned), Emails (EML/MSG), ZIP archives, and more</div>
           </div>
           
           <input id="file-upload" type="file" name="files" multiple onchange="showFileNames(this)">
