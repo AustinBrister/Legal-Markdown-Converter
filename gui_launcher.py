@@ -574,7 +574,7 @@ def index():
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Austin Brister's Wonderful Markdown Converter</title>
+      <title>Legal Markdown Converter</title>
       <style>
         * {
           margin: 0;
@@ -662,18 +662,18 @@ def index():
         }
         
         h1 {
-          font-size: 2rem;
+          font-size: 1.5rem;
           font-weight: 300;
           margin-bottom: 0.5rem;
-          background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
+          color: #888;
           letter-spacing: -0.5px;
         }
-        
+
         .subtitle {
-          font-size: 0.95rem;
-          color: #888;
+          font-size: 2rem;
+          background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
           margin-bottom: 2.5rem;
           font-weight: 400;
         }
@@ -979,6 +979,124 @@ def index():
           font-size: 0.85rem;
           color: #666;
         }
+
+        .disclaimer-link {
+          color: #888;
+          text-decoration: underline;
+          cursor: pointer;
+          transition: color 0.3s ease;
+        }
+
+        .disclaimer-link:hover {
+          color: #aaa;
+        }
+
+        .modal-overlay {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.8);
+          z-index: 1000;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+
+        .modal-overlay.active {
+          display: flex;
+        }
+
+        .modal-content {
+          background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          max-width: 600px;
+          width: 100%;
+          max-height: 80vh;
+          overflow-y: auto;
+          padding: 2rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+          animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .modal-content h2 {
+          color: #ff6b6b;
+          margin-bottom: 1.5rem;
+          font-size: 1.5rem;
+          text-align: center;
+        }
+
+        .modal-body {
+          color: #ccc;
+          font-size: 0.9rem;
+          line-height: 1.6;
+        }
+
+        .modal-body p {
+          margin-bottom: 1rem;
+        }
+
+        .modal-body ul {
+          margin: 1rem 0 1rem 1.5rem;
+        }
+
+        .modal-body li {
+          margin-bottom: 0.5rem;
+        }
+
+        .modal-body h3 {
+          color: #5cb85c;
+          font-size: 1.1rem;
+          margin-top: 1.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .modal-body h3:first-of-type {
+          margin-top: 0.5rem;
+        }
+
+        .modal-body a {
+          color: #74c0fc;
+          text-decoration: none;
+        }
+
+        .modal-body a:hover {
+          text-decoration: underline;
+        }
+
+        .modal-close {
+          display: block;
+          width: 100%;
+          margin-top: 1.5rem;
+          padding: 1rem;
+          background: linear-gradient(135deg, #387c2b 0%, #5cb85c 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(56, 124, 43, 0.4);
+        }
         
         /* Drag and drop styles */
         .upload-area.dragover {
@@ -996,7 +1114,7 @@ def index():
       <div class="container">
         <div class="logo">⚖️</div>
         <h1>Austin Brister's</h1>
-        <div class="subtitle">Wonderful Markdown Converter</div>
+        <div class="subtitle">Legal Markdown Converter</div>
         
         <form id="upload-form">
           <div class="upload-area" onclick="document.getElementById('file-upload').click()">
@@ -1026,7 +1144,94 @@ def index():
         </div>
         
         <div class="footer">
-          McGinnis Lochridge LLP • Houston, Texas
+          Austin Brister - Houston, Texas
+          <br><br>
+          <a href="#" class="disclaimer-link" onclick="showDisclaimer(); return false;">Disclaimer</a>
+          &nbsp;&bull;&nbsp;
+          <a href="#" class="disclaimer-link" onclick="showLicenses(); return false;">Open Source Licenses</a>
+        </div>
+      </div>
+
+      <!-- Licenses Modal -->
+      <div class="modal-overlay" id="licenses-modal">
+        <div class="modal-content">
+          <h2>Open Source Licenses</h2>
+          <div class="modal-body">
+            <p>This software incorporates the following open source components:</p>
+
+            <h3>Microsoft MarkItDown</h3>
+            <p>Core document conversion library<br>
+            <em>MIT License - Copyright (c) Microsoft Corporation</em><br>
+            <a href="https://github.com/microsoft/markitdown" target="_blank">github.com/microsoft/markitdown</a></p>
+
+            <h3>Flask</h3>
+            <p>Web framework<br>
+            <em>BSD-3-Clause License - Copyright (c) Pallets</em><br>
+            <a href="https://flask.palletsprojects.com/" target="_blank">flask.palletsprojects.com</a></p>
+
+            <h3>PyMuPDF</h3>
+            <p>PDF processing<br>
+            <em>AGPL-3.0 License (or Commercial) - Copyright (c) Artifex Software</em><br>
+            <a href="https://pymupdf.readthedocs.io/" target="_blank">pymupdf.readthedocs.io</a></p>
+
+            <h3>Tesseract OCR</h3>
+            <p>Optical character recognition<br>
+            <em>Apache-2.0 License - Copyright (c) Google</em><br>
+            <a href="https://github.com/tesseract-ocr/tesseract" target="_blank">github.com/tesseract-ocr/tesseract</a></p>
+
+            <h3>Pandoc</h3>
+            <p>Document format conversion<br>
+            <em>GPL-2.0 License - Copyright (c) John MacFarlane</em><br>
+            <a href="https://pandoc.org/" target="_blank">pandoc.org</a></p>
+
+            <h3>Pillow</h3>
+            <p>Image processing<br>
+            <em>HPND License - Copyright (c) Jeffrey A. Clark and contributors</em><br>
+            <a href="https://python-pillow.org/" target="_blank">python-pillow.org</a></p>
+
+            <h3>extract-msg</h3>
+            <p>Outlook MSG file parsing<br>
+            <em>GPL-3.0 License</em><br>
+            <a href="https://github.com/TeamMsgExtractor/msg-extractor" target="_blank">github.com/TeamMsgExtractor/msg-extractor</a></p>
+
+            <h3>markdown-it-py</h3>
+            <p>Markdown parsing<br>
+            <em>MIT License</em><br>
+            <a href="https://github.com/executablebooks/markdown-it-py" target="_blank">github.com/executablebooks/markdown-it-py</a></p>
+
+            <hr style="border-color: #333; margin: 1.5rem 0;">
+
+            <h3>Legal Markdown Converter</h3>
+            <p>This wrapper application<br>
+            <em>MIT License - Copyright (c) 2025 Austin Brister</em></p>
+            <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, subject to the following conditions:</p>
+            <p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+            <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.</p>
+          </div>
+          <button class="modal-close" onclick="hideLicenses()">Close</button>
+        </div>
+      </div>
+
+      <!-- Disclaimer Modal -->
+      <div class="modal-overlay" id="disclaimer-modal">
+        <div class="modal-content">
+          <h2>Disclaimer</h2>
+          <div class="modal-body">
+            <p><strong>USE AT YOUR OWN RISK</strong></p>
+            <p>This software is provided "as is" without warranty of any kind, express or implied. This is experimental code that may not properly convert all files or filetypes, and the lack of debugging and error messages means it likely will not make errors and omissions obvious to the end user. In addition, this tool is intended for convenient document conversion purposes only to be used in temporary AI/LLM uses, and should not be used for any backup or file retention purposes.</p>
+            <p>The author(s) and contributors make no representations or warranties regarding:</p>
+            <ul>
+              <li>The accuracy, completeness, or reliability of any conversions</li>
+              <li>The fitness of this software for any particular purpose</li>
+              <li>The preservation of document formatting, content, or structure</li>
+              <li>The security or confidentiality of any documents processed</li>
+            </ul>
+            <p><strong>LIMITATION OF LIABILITY</strong></p>
+            <p>In no event shall the author(s), contributors, or McGinnis Lochridge LLP be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, loss of data, business interruption, or any other commercial damages or losses) arising out of or in connection with the use or inability to use this software.</p>
+            <p>By using this software, you acknowledge that you have read this disclaimer and agree to assume all risks associated with its use. You are solely responsible for verifying the accuracy of any converted documents.</p>
+            <p><strong>This tool is not a substitute for professional document review.</strong></p>
+          </div>
+          <button class="modal-close" onclick="hideDisclaimer()">I Understand</button>
         </div>
       </div>
       
@@ -1228,6 +1433,37 @@ def index():
           fileInput.files = files;
           showFileNames(fileInput);
         }
+
+        // Disclaimer modal functions
+        function showDisclaimer() {
+          document.getElementById('disclaimer-modal').classList.add('active');
+        }
+
+        function hideDisclaimer() {
+          document.getElementById('disclaimer-modal').classList.remove('active');
+        }
+
+        // Licenses modal functions
+        function showLicenses() {
+          document.getElementById('licenses-modal').classList.add('active');
+        }
+
+        function hideLicenses() {
+          document.getElementById('licenses-modal').classList.remove('active');
+        }
+
+        // Close modals when clicking outside
+        document.getElementById('disclaimer-modal').addEventListener('click', function(e) {
+          if (e.target === this) {
+            hideDisclaimer();
+          }
+        });
+
+        document.getElementById('licenses-modal').addEventListener('click', function(e) {
+          if (e.target === this) {
+            hideLicenses();
+          }
+        });
       </script>
     </body>
     </html>
