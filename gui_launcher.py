@@ -5,6 +5,7 @@ import tempfile
 import re
 import subprocess
 import zipfile
+import socket
 from markitdown import MarkItDown
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
@@ -22,6 +23,17 @@ from email_converter import process_email_file
 app = Flask(__name__)
 UPLOAD_FOLDER = tempfile.gettempdir()
 OUTPUT_FOLDER = os.path.expanduser("~/Downloads/Converted to MD")
+
+def get_local_ip():
+    """Get the local network IP address."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # Store converted files in memory for remote downloads
@@ -1201,12 +1213,16 @@ def index():
 
             <hr style="border-color: #333; margin: 1.5rem 0;">
 
+            <h3>Network Access</h3>
+            <p>Others on your local network can access this tool at:<br>
+            <strong style="color: #5cb85c; font-size: 1.1rem;">http://{{ local_ip }}:5050</strong></p>
+            <p style="font-size: 0.8rem; color: #888;">(This address may change if your network assigns a new IP)</p>
+
+            <hr style="border-color: #333; margin: 1.5rem 0;">
+
             <h3>Legal Markdown Converter</h3>
-            <p>This wrapper application<br>
-            <em>MIT License - Copyright (c) 2025 Austin Brister</em></p>
-            <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, subject to the following conditions:</p>
-            <p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
-            <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.</p>
+            <p>This application<br>
+            <em>Copyright (c) 2025 Austin Brister. All rights reserved.</em></p>
           </div>
           <button class="modal-close" onclick="hideLicenses()">Close</button>
         </div>
@@ -1468,7 +1484,7 @@ def index():
     </body>
     </html>
     """
-    return render_template_string(html)
+    return render_template_string(html, local_ip=get_local_ip())
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5050)

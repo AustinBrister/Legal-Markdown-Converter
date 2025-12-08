@@ -148,4 +148,6 @@ Uses Microsoft's [MarkItDown](https://github.com/microsoft/markitdown) library f
 
 ## License
 
-MIT License. See Microsoft's MarkItDown repository for its license terms.
+Copyright (c) 2025 Austin Brister. All rights reserved.
+
+This software incorporates open source components which are subject to their respective licenses. See the "Open Source Licenses" section in the application for details.
