@@ -1,3 +1,5 @@
+# Legal Markdown Converter - Git Ignore
+
 # Python
 __pycache__/
 *.py[cod]

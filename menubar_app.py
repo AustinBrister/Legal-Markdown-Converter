@@ -1,3 +1,4 @@
+# Legal Markdown Converter - macOS Menubar App
 import rumps
 import subprocess
 import socket

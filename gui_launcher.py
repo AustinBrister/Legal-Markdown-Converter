@@ -1,3 +1,4 @@
+# Legal Markdown Converter - Main Flask Application
 from flask import Flask, request, render_template_string, jsonify, send_file
 import os
 import tempfile

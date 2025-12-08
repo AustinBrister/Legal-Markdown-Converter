@@ -1,3 +1,4 @@
+# Legal Markdown Converter - Native Window Launcher
 import os
 import sys
 import time
@@ -7,7 +8,7 @@ import socket
 import webview
 
 # Configuration
-APP_TITLE = "Austin Brister's Wonderful Markdown Converter"
+APP_TITLE = "Legal Markdown Converter"
 APP_URL = "http://127.0.0.1:5050"
 APP_PORT = 5050
 PROJECT_DIR = os.path.expanduser("~/DevHubs/Legal-Markdown-Converter")
