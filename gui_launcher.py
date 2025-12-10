@@ -284,8 +284,15 @@ def process_zip_file(zip_data, zip_filename, status_callback=None):
     content_parts.append("\n## End ZIP Contents")
     return "\n".join(content_parts)
 
-def process_single_file(filename, file_data, session_id):
-    """Process a single file and update status."""
+def process_single_file(filename, file_data, session_id, save_locally=True):
+    """Process a single file and update status.
+
+    Args:
+        filename: Original filename
+        file_data: File bytes
+        session_id: Session ID for status updates
+        save_locally: If True, save to local folder. If False, only store in memory for download.
+    """
     ext = os.path.splitext(filename)[1].lower()
     input_path = os.path.join(UPLOAD_FOLDER, secure_filename(filename))
 
@@ -297,6 +304,19 @@ def process_single_file(filename, file_data, session_id):
     output_path = os.path.join(OUTPUT_FOLDER, output_filename)
     file_id = str(uuid.uuid4())
 
+    def save_output(content):
+        """Save output based on whether this is a local or remote request."""
+        if save_locally:
+            # Local user - save to folder
+            with open(output_path, "w", encoding="utf-8") as f_out:
+                f_out.write(content)
+        else:
+            # Remote user - store in memory for download
+            converted_files[file_id] = {
+                'filename': output_filename,
+                'content': content
+            }
+
     try:
         # Handle ZIP files - extract and convert all contents
         if ext == ".zip":
@@ -307,17 +327,7 @@ def process_single_file(filename, file_data, session_id):
                     processing_status[session_id]['current_status'] = f'{filename}: {msg}'
 
                 content = process_zip_file(file_data, filename, status_cb)
-
-                # Save to local folder
-                with open(output_path, "w", encoding="utf-8") as f_out:
-                    f_out.write(content)
-
-                # Store in memory for remote downloads
-                converted_files[file_id] = {
-                    'filename': output_filename,
-                    'content': content
-                }
-
+                save_output(content)
                 return {'type': 'success', 'message': f'{filename} ZIP archive converted successfully', 'file_id': file_id, 'filename': output_filename}
 
             except Exception as zip_err:
@@ -385,16 +395,7 @@ def process_single_file(filename, file_data, session_id):
 
                 # Combine all content
                 content = "\n".join(combined_content_parts)
-
-                # Save to local folder
-                with open(output_path, "w", encoding="utf-8") as f_out:
-                    f_out.write(content)
-
-                # Store in memory for remote downloads
-                converted_files[file_id] = {
-                    'filename': output_filename,
-                    'content': content
-                }
+                save_output(content)
 
                 att_count = len(separate_attachments)
                 att_msg = f" with {att_count} attachment(s)" if att_count > 0 else ""
@@ -408,17 +409,7 @@ def process_single_file(filename, file_data, session_id):
             if needs_ocr(input_path):
                 processing_status[session_id]['current_status'] = f'{filename} appears to be a scanned PDF, performing OCR...'
                 content = ocr_pdf(input_path)
-                
-                # Save to local folder
-                with open(output_path, "w", encoding="utf-8") as f_out:
-                    f_out.write(content)
-                
-                # Also store in memory for remote downloads
-                converted_files[file_id] = {
-                    'filename': output_filename,
-                    'content': content
-                }
-                
+                save_output(content)
                 return {'type': 'success', 'message': f'{filename} converted successfully (via OCR)', 'file_id': file_id, 'filename': output_filename}
             else:
                 # Try regular text extraction first with MarkItDown
@@ -426,37 +417,18 @@ def process_single_file(filename, file_data, session_id):
                     with open(input_path, "rb") as stream:
                         result = MarkItDown().convert_stream(stream)
                         content = strip_westlaw_links(result.markdown)
-                        
+
                         # Check if we got meaningful content
                         if len(content.strip()) < 50:
                             raise Exception("Extracted text too short, trying OCR")
-                        
-                        # Save to local folder
-                        with open(output_path, "w", encoding="utf-8") as f_out:
-                            f_out.write(content)
-                        
-                        # Also store in memory for remote downloads
-                        converted_files[file_id] = {
-                            'filename': output_filename,
-                            'content': content
-                        }
-                        
+
+                        save_output(content)
                         return {'type': 'success', 'message': f'{filename} converted successfully (text extraction)', 'file_id': file_id, 'filename': output_filename}
                 except:
                     # Fall back to OCR
                     processing_status[session_id]['current_status'] = f'{filename} text extraction failed, trying OCR...'
                     content = ocr_pdf(input_path)
-                    
-                    # Save to local folder
-                    with open(output_path, "w", encoding="utf-8") as f_out:
-                        f_out.write(content)
-                    
-                    # Also store in memory for remote downloads
-                    converted_files[file_id] = {
-                        'filename': output_filename,
-                        'content': content
-                    }
-                    
+                    save_output(content)
                     return {'type': 'success', 'message': f'{filename} converted successfully (via OCR fallback)', 'file_id': file_id, 'filename': output_filename}
         
         # Check if this is actually an RTF file (common with Westlaw .doc files)
@@ -478,17 +450,7 @@ def process_single_file(filename, file_data, session_id):
                     text=True
                 )
                 cleaned = strip_westlaw_links(pandoc_output.stdout)
-                
-                # Save to local folder
-                with open(output_path, "w", encoding="utf-8") as f_out:
-                    f_out.write(cleaned)
-                
-                # Also store in memory for remote downloads
-                converted_files[file_id] = {
-                    'filename': output_filename,
-                    'content': cleaned
-                }
-                
+                save_output(cleaned)
                 return {'type': 'success', 'message': f'{filename} converted successfully' +
                           (f' (as {input_format})' if actual_format else ''), 'file_id': file_id, 'filename': output_filename}
             except subprocess.CalledProcessError as e:
@@ -501,17 +463,8 @@ def process_single_file(filename, file_data, session_id):
         with open(input_path, "rb") as stream:
             result = MarkItDown().convert_stream(stream)
             content = strip_westlaw_links(result.markdown)
-        
-        # Save to local folder
-        with open(output_path, "w", encoding="utf-8") as f_out:
-            f_out.write(content)
-        
-        # Also store in memory for remote downloads
-        converted_files[file_id] = {
-            'filename': output_filename,
-            'content': content
-        }
-        
+
+        save_output(content)
         return {'type': 'success', 'message': f'{filename} converted successfully (via MarkItDown)', 'file_id': file_id, 'filename': output_filename}
         
     except Exception as e:
@@ -541,19 +494,22 @@ def process_files():
     file_data_list = []
     for file in files:
         file_data_list.append((file.filename, file.read()))
-    
+
+    # Determine if this is a local request (must capture now, before thread starts)
+    save_locally = is_local_request()
+
     # Process files in background
     def process_all():
         for index, (filename, data) in enumerate(file_data_list):
             processing_status[session_id]['current'] = index + 1
             processing_status[session_id]['current_status'] = f'Processing {filename}...'
-            
-            result = process_single_file(filename, data, session_id)
+
+            result = process_single_file(filename, data, session_id, save_locally)
             processing_status[session_id]['results'].append(result)
-        
+
         processing_status[session_id]['complete'] = True
         processing_status[session_id]['current_status'] = 'All files converted!'
-    
+
     thread = threading.Thread(target=process_all)
     thread.start()
     
@@ -672,7 +628,7 @@ def index():
           box-shadow: 
             0 20px 40px rgba(0, 0, 0, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
-          max-width: 600px;
+          max-width: 700px;
           width: 100%;
           text-align: center;
           position: relative;
@@ -1007,7 +963,8 @@ def index():
         }
         
         .reset-button {
-          margin-top: 1.5rem;
+          display: block;
+          margin: 1rem auto 0;
           background: none;
           color: #888;
           border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1063,7 +1020,7 @@ def index():
           background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%);
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 16px;
-          max-width: 600px;
+          max-width: 700px;
           width: 100%;
           max-height: 80vh;
           overflow-y: auto;
@@ -1180,6 +1137,7 @@ def index():
           </div>
           
           <button type="submit" class="submit-button">Convert to Markdown</button>
+          <button class="reset-button hidden" id="reset-button" onclick="clearResults()">Clear and Start New Conversion</button>
         </form>
         
         <div class="progress-bar" id="progress-bar">
@@ -1190,7 +1148,6 @@ def index():
         <div class="results hidden" id="results">
           <h2>Conversion Results</h2>
           <div id="results-list"></div>
-          <button class="reset-button" onclick="clearResults()">Start New Conversion</button>
         </div>
         
         <div class="footer">
@@ -1428,7 +1385,8 @@ def index():
           resultsList.innerHTML = '';
           lastResultCount = 0;
           results.classList.remove('hidden');
-          
+          document.getElementById('reset-button').classList.remove('hidden');
+
           // Create FormData
           const formData = new FormData();
           for (let i = 0; i < fileInput.files.length; i++) {

@@ -48,62 +48,93 @@ Large Language Models work best with clean markdown text. But legal documents co
 
 ### Prerequisites
 - Python 3.10 or higher
-- Pandoc and Tesseract (for OCR)
+- Pandoc (document conversion)
+- Tesseract OCR (for scanned PDFs)
 
-### macOS
-```bash
-# Install system dependencies
-brew install pandoc tesseract
+---
 
-# Clone and setup
-git clone https://github.com/AustinBrister/Legal-Markdown-Converter.git
-cd Legal-Markdown-Converter
-git submodule init
-git submodule update
-```
+### Windows Installation
 
-### Windows
+#### Step 1: Install Python
+1. Download Python from [python.org/downloads](https://www.python.org/downloads/)
+2. Run the installer
+3. **IMPORTANT:** Check the box that says "Add Python to PATH" before clicking Install
+
+#### Step 2: Install Tesseract OCR
+1. Download from [UB-Mannheim Tesseract](https://github.com/UB-Mannheim/tesseract/wiki)
+2. Run the installer
+3. **IMPORTANT:** During installation, check the option to "Add to PATH"
+4. If you missed the PATH option, manually add `C:\Program Files\Tesseract-OCR` to your system PATH:
+   - Search "Environment Variables" in Windows
+   - Click "Environment Variables"
+   - Under "System Variables", find "Path" and click "Edit"
+   - Click "New" and add `C:\Program Files\Tesseract-OCR`
+   - Click OK on all dialogs
+
+#### Step 3: Install Pandoc
+1. Download from [pandoc.org/installing.html](https://pandoc.org/installing.html)
+2. Run the Windows installer (it adds to PATH automatically)
+
+#### Step 4: Download Legal Markdown Converter
 ```powershell
-# Install Pandoc: https://pandoc.org/installing.html
-# Install Tesseract: https://github.com/UB-Mannheim/tesseract/wiki
-
-# Clone and setup
 git clone https://github.com/AustinBrister/Legal-Markdown-Converter.git
 cd Legal-Markdown-Converter
 git submodule init
 git submodule update
 ```
 
-## Usage
+Or download and extract the ZIP from GitHub.
 
-### macOS
+#### Step 5: Run the Converter
+Double-click `launch.bat` - it will:
+- Create a virtual environment (first time only)
+- Install Python dependencies (first time only)
+- Check for Tesseract and Pandoc
+- Start the server and open your browser
+
+---
+
+### macOS Installation
+
+#### Step 1: Install Homebrew (if not already installed)
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+#### Step 2: Install Dependencies
+```bash
+brew install python pandoc tesseract
+```
+
+#### Step 3: Download Legal Markdown Converter
+```bash
+git clone https://github.com/AustinBrister/Legal-Markdown-Converter.git
+cd Legal-Markdown-Converter
+git submodule init
+git submodule update
+```
+
+#### Step 4: Run the Converter
 Double-click `launch.command` or run:
 ```bash
 ./launch.command
 ```
 
-### Windows
-Double-click `launch.bat` or run:
-```cmd
-launch.bat
-```
+## Usage
 
-The launch scripts will:
-- Create a virtual environment if needed
-- Install dependencies automatically
-- Start the server
-- Open your browser to the converter
+**Just double-click the launch file each time you want to use the converter:**
+- **Windows:** Double-click `launch.bat`
+- **macOS:** Double-click `launch.command`
 
-### Manual Launch
-```bash
-# Activate virtual environment
-source venv/bin/activate  # macOS/Linux
-venv\Scripts\activate     # Windows
+The launch script handles everything - it starts the server and opens your browser automatically. When you're done, just close the terminal window.
 
-# Run the server
-python gui_launcher.py
-```
-Then open http://127.0.0.1:5050
+### Troubleshooting
+
+**"Python is not recognized"** - Python isn't in your PATH. Reinstall Python and check "Add to PATH".
+
+**"Tesseract is not recognized"** - Add `C:\Program Files\Tesseract-OCR` to your system PATH (see installation steps above).
+
+**Port already in use** - The launch script will automatically kill any existing process on port 5050.
 
 ## Configuration
 

@@ -14,13 +14,22 @@ pytesseract>=0.3.10
 Pillow>=10.0.0
 
 # Email Processing (EML/MSG)
-extract-msg>=0.48.0  # For Outlook .msg files
+extract-msg>=0.48.0
 
-# macOS Menubar App (optional, macOS only)
-rumps>=0.4.0
-
-# Note: Pandoc must be installed separately via Homebrew
-# brew install pandoc
-
-# Note: Tesseract OCR must be installed separately via Homebrew
-# brew install tesseract
+# =============================================================================
+# IMPORTANT: External dependencies (NOT installed by pip)
+# =============================================================================
+# The following programs must be installed separately on your system:
+#
+# 1. PANDOC - Document format conversion
+#    - macOS:   brew install pandoc
+#    - Windows: Download from https://pandoc.org/installing.html
+#               (Use the Windows installer, it adds to PATH automatically)
+#
+# 2. TESSERACT OCR - For scanned PDF text extraction
+#    - macOS:   brew install tesseract
+#    - Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki
+#               IMPORTANT: During installation, check "Add to PATH" option
+#               If you forgot, manually add to PATH:
+#               C:\Program Files\Tesseract-OCR
+# =============================================================================
