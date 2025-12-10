@@ -28,4 +28,24 @@ extract-msg>=0.48.0
 #
 # macOS: Installed via Homebrew (brew install)
 # Windows: Installed via winget (Windows Package Manager)
+#
+# =============================================================================
+# Manual installation (if automatic installation fails)
+# =============================================================================
+#
+# PYTHON 3.10+
+#   macOS:   brew install python
+#   Windows: https://www.python.org/downloads/
+#            IMPORTANT: Check "Add Python to PATH" during installation
+#
+# PANDOC (document format conversion)
+#   macOS:   brew install pandoc
+#   Windows: https://pandoc.org/installing.html
+#            (The installer adds to PATH automatically)
+#
+# TESSERACT OCR (for scanned PDF text extraction)
+#   macOS:   brew install tesseract
+#   Windows: https://github.com/UB-Mannheim/tesseract/wiki
+#            IMPORTANT: Check "Add to PATH" during installation
+#            If missed, manually add to PATH: C:\Program Files\Tesseract-OCR
 # =============================================================================
