@@ -17,19 +17,15 @@ Pillow>=10.0.0
 extract-msg>=0.48.0
 
 # =============================================================================
-# IMPORTANT: External dependencies (NOT installed by pip)
+# External dependencies (installed automatically by launch scripts)
 # =============================================================================
-# The following programs must be installed separately on your system:
+# The launch scripts (launch.command on macOS, launch.bat on Windows) will
+# automatically install the following if they're missing:
 #
-# 1. PANDOC - Document format conversion
-#    - macOS:   brew install pandoc
-#    - Windows: Download from https://pandoc.org/installing.html
-#               (Use the Windows installer, it adds to PATH automatically)
+# - Python 3
+# - Pandoc (document format conversion)
+# - Tesseract OCR (for scanned PDF text extraction)
 #
-# 2. TESSERACT OCR - For scanned PDF text extraction
-#    - macOS:   brew install tesseract
-#    - Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki
-#               IMPORTANT: During installation, check "Add to PATH" option
-#               If you forgot, manually add to PATH:
-#               C:\Program Files\Tesseract-OCR
+# macOS: Installed via Homebrew (brew install)
+# Windows: Installed via winget (Windows Package Manager)
 # =============================================================================
