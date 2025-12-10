@@ -84,17 +84,8 @@ If automatic installation doesn't work, install these manually:
 
 ### macOS Installation
 
-#### Step 1: Install Homebrew (if not already installed)
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
-
-#### Step 2: Install Dependencies
-```bash
-brew install python pandoc tesseract
-```
-
-#### Step 3: Download Legal Markdown Converter
+#### Step 1: Download Legal Markdown Converter
+Download and extract the ZIP from GitHub, or use git:
 ```bash
 git clone https://github.com/AustinBrister/Legal-Markdown-Converter.git
 cd Legal-Markdown-Converter
@@ -102,11 +93,13 @@ git submodule init
 git submodule update
 ```
 
-#### Step 4: Run the Converter
-Double-click `launch.command` or run:
-```bash
-./launch.command
-```
+#### Step 2: Run the Converter
+Double-click `launch.command` - it will automatically:
+- Install Homebrew (if needed)
+- Install Python, Tesseract, and Pandoc via Homebrew (if needed)
+- Create a Python virtual environment
+- Install Python packages
+- Start the server and open your browser
 
 ## Usage
 

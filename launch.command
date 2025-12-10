@@ -1,13 +1,55 @@
 #!/bin/bash
 # Legal Markdown Converter - macOS Launch Script
+# Double-click this file to start the converter
 
 cd "$(dirname "$0")" || exit 1
 
+echo "============================================"
+echo " Legal Markdown Converter"
+echo "============================================"
+echo ""
+
+# Check for Homebrew
+if ! command -v brew &> /dev/null; then
+  echo "Homebrew is not installed."
+  echo "Installing Homebrew (this may take a few minutes)..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  # Add Homebrew to PATH for this session (Apple Silicon vs Intel)
+  if [ -f "/opt/homebrew/bin/brew" ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ -f "/usr/local/bin/brew" ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+fi
+
+# Check for Python 3
+if ! command -v python3 &> /dev/null; then
+  echo "Python 3 is not installed."
+  echo "Installing Python via Homebrew..."
+  brew install python
+fi
+
+# Check for Tesseract
+if ! command -v tesseract &> /dev/null; then
+  echo "Tesseract OCR is not installed."
+  echo "Installing Tesseract via Homebrew..."
+  brew install tesseract
+fi
+
+# Check for Pandoc
+if ! command -v pandoc &> /dev/null; then
+  echo "Pandoc is not installed."
+  echo "Installing Pandoc via Homebrew..."
+  brew install pandoc
+fi
+
 # Check if virtual environment exists
 if [ ! -d "venv" ]; then
-  echo "Virtual environment not found. Creating one..."
+  echo "Creating virtual environment..."
   python3 -m venv venv
   source venv/bin/activate
+  echo "Installing Python dependencies..."
   venv/bin/pip install -r requirements.txt
 else
   source venv/bin/activate
@@ -15,7 +57,7 @@ fi
 
 # Check for Flask and install if missing
 if ! venv/bin/python -c "import flask" &> /dev/null; then
-  echo "Installing dependencies..."
+  echo "Installing Python dependencies..."
   venv/bin/pip install -r requirements.txt
 fi
 
