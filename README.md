@@ -55,27 +55,8 @@ Large Language Models work best with clean markdown text. But legal documents co
 
 ### Windows Installation
 
-#### Step 1: Install Python
-1. Download Python from [python.org/downloads](https://www.python.org/downloads/)
-2. Run the installer
-3. **IMPORTANT:** Check the box that says "Add Python to PATH" before clicking Install
-
-#### Step 2: Install Tesseract OCR
-1. Download from [UB-Mannheim Tesseract](https://github.com/UB-Mannheim/tesseract/wiki)
-2. Run the installer
-3. **IMPORTANT:** During installation, check the option to "Add to PATH"
-4. If you missed the PATH option, manually add `C:\Program Files\Tesseract-OCR` to your system PATH:
-   - Search "Environment Variables" in Windows
-   - Click "Environment Variables"
-   - Under "System Variables", find "Path" and click "Edit"
-   - Click "New" and add `C:\Program Files\Tesseract-OCR`
-   - Click OK on all dialogs
-
-#### Step 3: Install Pandoc
-1. Download from [pandoc.org/installing.html](https://pandoc.org/installing.html)
-2. Run the Windows installer (it adds to PATH automatically)
-
-#### Step 4: Download Legal Markdown Converter
+#### Step 1: Download Legal Markdown Converter
+Download and extract the ZIP from GitHub, or use git:
 ```powershell
 git clone https://github.com/AustinBrister/Legal-Markdown-Converter.git
 cd Legal-Markdown-Converter
@@ -83,14 +64,21 @@ git submodule init
 git submodule update
 ```
 
-Or download and extract the ZIP from GitHub.
-
-#### Step 5: Run the Converter
-Double-click `launch.bat` - it will:
-- Create a virtual environment (first time only)
-- Install Python dependencies (first time only)
-- Check for Tesseract and Pandoc
+#### Step 2: Run the Converter
+Double-click `launch.bat` - it will automatically:
+- Check for Python, Tesseract, and Pandoc
+- **Install any missing dependencies via winget** (Windows Package Manager)
+- Create a Python virtual environment
+- Install Python packages
 - Start the server and open your browser
+
+**Note:** If dependencies are installed, you may need to run `launch.bat` a second time for PATH changes to take effect.
+
+#### Manual Installation (if winget fails)
+If automatic installation doesn't work, install these manually:
+- **Python 3.10+**: [python.org/downloads](https://www.python.org/downloads/) - check "Add to PATH"
+- **Tesseract OCR**: [UB-Mannheim Tesseract](https://github.com/UB-Mannheim/tesseract/wiki) - check "Add to PATH"
+- **Pandoc**: [pandoc.org/installing.html](https://pandoc.org/installing.html)
 
 ---
 

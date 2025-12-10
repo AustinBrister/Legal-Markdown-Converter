@@ -4,44 +4,78 @@ REM Double-click this file to start the converter
 
 cd /d "%~dp0"
 
+REM Check for winget (Windows Package Manager)
+winget --version >nul 2>&1
+if errorlevel 1 (
+    set HAVE_WINGET=0
+) else (
+    set HAVE_WINGET=1
+)
+
 REM Check for Python
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Python is not installed or not in PATH.
-    echo Please install Python 3.10+ from https://www.python.org/downloads/
-    echo Make sure to check "Add Python to PATH" during installation.
-    pause
-    exit /b 1
+    echo Python is not installed.
+    if %HAVE_WINGET%==1 (
+        echo Installing Python via winget...
+        winget install Python.Python.3.12 --silent --accept-package-agreements --accept-source-agreements
+        if errorlevel 1 (
+            echo Failed to install Python automatically.
+            echo Please install manually from https://www.python.org/downloads/
+            echo Make sure to check "Add Python to PATH" during installation.
+            pause
+            exit /b 1
+        )
+        echo Python installed. Please close this window and run launch.bat again.
+        pause
+        exit /b 0
+    ) else (
+        echo Please install Python 3.10+ from https://www.python.org/downloads/
+        echo Make sure to check "Add Python to PATH" during installation.
+        pause
+        exit /b 1
+    )
 )
 
 REM Check for Tesseract
 tesseract --version >nul 2>&1
 if errorlevel 1 (
-    echo.
-    echo WARNING: Tesseract OCR is not installed or not in PATH.
-    echo Scanned PDF conversion will not work without it.
-    echo.
-    echo To install Tesseract:
-    echo 1. Download from: https://github.com/UB-Mannheim/tesseract/wiki
-    echo 2. Run the installer
-    echo 3. IMPORTANT: Check "Add to PATH" during installation
-    echo    Or manually add: C:\Program Files\Tesseract-OCR to your PATH
-    echo.
-    pause
+    echo Tesseract OCR is not installed.
+    if %HAVE_WINGET%==1 (
+        echo Installing Tesseract via winget...
+        winget install UB-Mannheim.TesseractOCR --silent --accept-package-agreements --accept-source-agreements
+        if errorlevel 1 (
+            echo Failed to install Tesseract automatically.
+            echo Please install manually from https://github.com/UB-Mannheim/tesseract/wiki
+            pause
+        ) else (
+            echo Tesseract installed. You may need to restart this script for PATH to update.
+        )
+    ) else (
+        echo Please install from https://github.com/UB-Mannheim/tesseract/wiki
+        echo Make sure to check "Add to PATH" during installation.
+        pause
+    )
 )
 
 REM Check for Pandoc
 pandoc --version >nul 2>&1
 if errorlevel 1 (
-    echo.
-    echo WARNING: Pandoc is not installed or not in PATH.
-    echo Some document formats may not convert properly.
-    echo.
-    echo To install Pandoc:
-    echo 1. Download from: https://pandoc.org/installing.html
-    echo 2. Run the Windows installer (adds to PATH automatically)
-    echo.
-    pause
+    echo Pandoc is not installed.
+    if %HAVE_WINGET%==1 (
+        echo Installing Pandoc via winget...
+        winget install JohnMacFarlane.Pandoc --silent --accept-package-agreements --accept-source-agreements
+        if errorlevel 1 (
+            echo Failed to install Pandoc automatically.
+            echo Please install manually from https://pandoc.org/installing.html
+            pause
+        ) else (
+            echo Pandoc installed. You may need to restart this script for PATH to update.
+        )
+    ) else (
+        echo Please install from https://pandoc.org/installing.html
+        pause
+    )
 )
 
 REM Check if virtual environment exists
