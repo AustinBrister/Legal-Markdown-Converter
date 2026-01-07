@@ -4,8 +4,13 @@
 flask>=3.0.0
 werkzeug>=3.0.0
 
+# Native Desktop App (pywebview)
+# Note: On Windows, uses Edge WebView2 (built into Windows 10/11)
+# We exclude pythonnet as it has build issues and isn't needed for EdgeChromium
+pywebview>=5.0.0
+
 # Markdown Processing
-markitdown
+markitdown[pdf]==0.1.2
 markdown-it-py>=3.0.0
 
 # PDF Processing
